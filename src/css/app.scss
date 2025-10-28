@@ -1,0 +1,16 @@
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  white-space: wrap;
+}
+
+$widths-vw: 10vw, 20vw, 30vw, 40vw, 50vw, 60vw, 70vw, 80vw, 90vw, 100vw;
+
+@each $width in $widths-vw {
+  .width-#{$width} {
+    width: $width;
+  }
+}
+@import 'scroll';
+@import 'transitions';
