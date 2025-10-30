@@ -18,10 +18,10 @@ String espType = "spinner";
 String espID = "2";
 
 //Параметры сети (роутер)
-// const char* ssid     = "9031";
-// const char* password = "zdMy9031";
-const char* ssid     = "centrett";
-const char* password = "238452323";
+const char* ssid     = "9031";
+const char* password = "zdMy9031";
+// const char* ssid     = "centrett";
+// const char* password = "238452323";
 
 uint8_t RED[] = {255, 0, 0};
 uint8_t BLUE[] = {0, 0, 255};

@@ -4,9 +4,9 @@
 #include <ESP8266WebServer.h>
 #include <ArduinoJson.h>
 #include <Esp.h>
-// #include <FastLED.h>
 
 #define NUM_LEDS 93
+#define NUM_RINGS 5
 #define DATA_PIN1 4 //D2 RING круг
 #define BRIGHTNESS  100
 
@@ -33,80 +33,19 @@ ESP8266WebServer server (80);
 //Параметры программы светодиодной ленты
 String programSetting = "default";
 
-//Кольцо 5
-bool enable5 = false;
-int num_leds1_5 = 32;
-int period1_5 = 500;
-int start1_5 = 61;
-int end1_5 = 92;
-unsigned long timer1_5;
-int counter1_5  = 0;
-uint8_t color5[] = {0, 0, 0};
-uint direction5 = 1;
-int blockSize5 = 1;
-bool firstStart5 = true;
+bool enable[] = {false, false, false, false, false, false}; // [Центральное, Кольцо 1, Кольцо 2, Кольцо 3, Кольцо 4, Кольцо 5]
+int period[] = {500, 500, 500, 500, 500, 500}; // [Центральное, Кольцо 1, Кольцо 2, Кольцо 3, Кольцо 4, Кольцо 5]
+int num_leds[] = {0, 8, 12, 16, 24, 32}; // [Центральное, Кольцо 1, Кольцо 2, Кольцо 3, Кольцо 4, Кольцо 5]
+int start_led[] = {0, 1, 9, 21, 37, 61}; // [Центральное, Кольцо 1, Кольцо 2, Кольцо 3, Кольцо 4, Кольцо 5]
+int end_led[] = {0, 8, 20, 36, 60, 92}; // [Центральное, Кольцо 1, Кольцо 2, Кольцо 3, Кольцо 4, Кольцо 5]
+uint8_t colors[][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}}; // [Центральное, Кольцо 1, Кольцо 2, Кольцо 3, Кольцо 4, Кольцо 5]
+uint directions[] = {0, 0, 0, 0, 0, 0}; // [Центральное, Кольцо 1, Кольцо 2, Кольцо 3, Кольцо 4, Кольцо 5]
+uint blockSizes[] = {1, 1, 1, 1, 1, 1}; // [Центральное, Кольцо 1, Кольцо 2, Кольцо 3, Кольцо 4, Кольцо 5]
+bool firstStart[] = {false, true, true, true, true, true}; // [Центральное, Кольцо 1, Кольцо 2, Кольцо 3, Кольцо 4, Кольцо 5]
+unsigned long timers[] = {0, 0, 0, 0, 0, 0}; // [Центральное, Кольцо 1, Кольцо 2, Кольцо 3, Кольцо 4, Кольцо 5]
+uint counters[] = {0, 0, 0, 0, 0, 0}; // [Центральное, Кольцо 1, Кольцо 2, Кольцо 3, Кольцо 4, Кольцо 5]
 
-//Кольцо 4
-bool enable4 = false;
-int num_leds1_4 = 24;
-int period1_4 = 500;
-int start1_4 = 37;
-int end1_4 = 60;
-unsigned long timer1_4;
-int counter1_4  = 0;
-uint8_t color4[] = {0, 0, 0};
-uint direction4 = 1;
-int blockSize4 = 1;
-bool firstStart4 = true;
-
-
-//Кольцо 3
-bool enable3 = false;
-int num_leds1_3 = 16;
-int period1_3 = 500;
-int start1_3 = 21;
-int end1_3 = 36;
-unsigned long timer1_3;
-int counter1_3  = 0;
-uint8_t color3[] = {0, 0, 0};
-uint direction3 = 1;
-int blockSize3 = 1;
-bool firstStart3 = true;
-
-//Кольцо 2
-bool enable2 = false;
-int num_leds1_2 = 12;
-int period1_2 = 500;
-int start1_2 = 9;
-int end1_2 = 20;
-unsigned long timer1_2;
-int counter1_2  = 0;
-uint8_t color2[] = {0, 0, 0};
-uint direction2 = 1;
-int blockSize2 = 1;
-bool firstStart2 = true;
-
-
-//Кольцо 1
-bool enable1 = false;
-int num_leds1_1 = 8;
-int period1_1 = 500;
-int start1_1 = 1;
-int end1_1 = 8;
-unsigned long timer1_1;
-int counter1_1  = 0;
-uint8_t color1[] = {0, 0, 0};
-uint direction1 = 1;
-int blockSize1 = 1;
-bool firstStart1 = true;
-
-//Центральное
-bool enable0 = false;
-int period1_0 = 500;
 bool center1_0 = true;
-unsigned long timer1_0;
-uint8_t color0[] = {0, 0, 0};
-
 
 bool isStarted = false;
 
@@ -176,19 +115,19 @@ void setProgram(){
     String Color4 = JSONData["color4"].as<String>();
     String Color5 = JSONData["color5"].as<String>();
     
-    stringToRGB(Color0, color0);
-    stringToRGB(Color1, color1);
-    stringToRGB(Color2, color2);
-    stringToRGB(Color3, color3);
-    stringToRGB(Color4, color4);
-    stringToRGB(Color5, color5);
+    stringToRGB(Color0, colors[0]);
+    stringToRGB(Color1, colors[1]);
+    stringToRGB(Color2, colors[2]);
+    stringToRGB(Color3, colors[3]);
+    stringToRGB(Color4, colors[4]);
+    stringToRGB(Color5, colors[5]);
 
-    enable0 = JSONData["enable0"].as<bool>();
-    enable1 = JSONData["enable1"].as<bool>();
-    enable2 = JSONData["enable2"].as<bool>();
-    enable3 = JSONData["enable3"].as<bool>();
-    enable4 = JSONData["enable4"].as<bool>();
-    enable5 = JSONData["enable5"].as<bool>();
+    enable[0] = JSONData["enable0"].as<bool>();
+    enable[1] = JSONData["enable1"].as<bool>();
+    enable[2] = JSONData["enable2"].as<bool>();
+    enable[3] = JSONData["enable3"].as<bool>();
+    enable[4] = JSONData["enable4"].as<bool>();
+    enable[5] = JSONData["enable5"].as<bool>();
     
     int Period0 = JSONData["period0"].as<int>();
     int Period1 = JSONData["period1"].as<int>();
@@ -197,28 +136,25 @@ void setProgram(){
     int Period4 = JSONData["period4"].as<int>();
     int Period5 = JSONData["period5"].as<int>();
 
-    period1_1 = Period1 / num_leds1_1;
-    period1_2 = Period2 / num_leds1_2;
-    period1_3 = Period3 / num_leds1_3;
-    period1_4 = Period4 / num_leds1_4;
-    period1_5 = Period5 / num_leds1_5;
-    period1_0 = Period0 / 2;
-    
+    period[1] = Period1 / num_leds[1];
+    period[2] = Period2 / num_leds[2];
+    period[3] = Period3 / num_leds[3];
+    period[4] = Period4 / num_leds[4];
+    period[5] = Period5 / num_leds[5];
+    period[0] = Period0 / 2;
 
-    direction1 = JSONData["direction1"].as<int>();
-    direction2 = JSONData["direction2"].as<int>();
-    direction3 = JSONData["direction3"].as<int>();
-    direction4 = JSONData["direction4"].as<int>();
-    direction5 = JSONData["direction5"].as<int>();
+    directions[1] = JSONData["direction1"].as<int>();
+    directions[2] = JSONData["direction2"].as<int>();
+    directions[3] = JSONData["direction3"].as<int>();
+    directions[4] = JSONData["direction4"].as<int>();
+    directions[5] = JSONData["direction5"].as<int>();
 
 
-    blockSize1 = JSONData["blockSize1"].as<int>();
-    blockSize2 = JSONData["blockSize2"].as<int>();
-    blockSize3 = JSONData["blockSize3"].as<int>();
-    blockSize4 = JSONData["blockSize4"].as<int>();
-    blockSize5 = JSONData["blockSize5"].as<int>();
-
-    // Serial.println(direction1);
+    blockSizes[1] = JSONData["blockSize1"].as<int>();
+    blockSizes[2] = JSONData["blockSize2"].as<int>();
+    blockSizes[3] = JSONData["blockSize3"].as<int>();
+    blockSizes[4] = JSONData["blockSize4"].as<int>();
+    blockSizes[5] = JSONData["blockSize5"].as<int>();
 
     programSetting = "custom";
     server.send(200,"application/json", "Ok");
@@ -252,7 +188,6 @@ void hw_wdt_enable(){
 
 void setup() {
   delay( 1000 );
-  // hw_wdt_disable();
   // ESP.wdtDisable();
   RING.begin();
   RING.setBrightness(100);
@@ -275,24 +210,24 @@ void setup() {
 
 
 void start(){
-  firstStart1 = true;
-  firstStart2 = true;
-  firstStart3 = true;
-  firstStart4 = true;
-  firstStart5 = true;
+  firstStart[1] = true;
+  firstStart[2] = true;
+  firstStart[3] = true;
+  firstStart[4] = true;
+  firstStart[5] = true;
 
-  timer1_0 = millis();
-  timer1_1 = timer1_0;
-  timer1_2 = timer1_0;
-  timer1_3 = timer1_0;
-  timer1_4 = timer1_0;
-  timer1_5 = timer1_0;
+  timers[0] = millis();
+  timers[1] = timers[0];
+  timers[2] = timers[0];
+  timers[3] = timers[0];
+  timers[4] = timers[0];
+  timers[5] = timers[0];
 
-  counter1_1 = direction1 == 0? start1_1 - 1 : start1_1 + 1;
-  counter1_2 = direction2 == 0? start1_2 - 1 : start1_2 + 1;
-  counter1_3 = direction3 == 0? start1_3 - 1 : start1_3 + 1;
-  counter1_4 = direction4 == 0? start1_4 - 1 : start1_4 + 1;
-  counter1_5 = direction5 == 0? start1_5 - 1 : start1_5 + 1;
+  counters[1] = directions[1] == 0? start_led[1] - 1 : start_led[1] + 1;
+  counters[2] = directions[2] == 0? start_led[2] - 1 : start_led[2] + 1;
+  counters[3] = directions[3] == 0? start_led[3] - 1 : start_led[3] + 1;
+  counters[4] = directions[4] == 0? start_led[4] - 1 : start_led[4] + 1;
+  counters[5] = directions[5] == 0? start_led[5] - 1 : start_led[5] + 1;
   center1_0 = true;
 
   clear();
@@ -302,12 +237,9 @@ void start(){
 
 void stop(){
   isStarted = false;
-  enable0 = false;
-  enable1 = false;
-  enable2 = false;
-  enable3 = false;
-  enable4 = false;
-  enable5 = false; 
+  for (uint8_t i = 0; i <= 5; i++) {
+    enable[i] = false;
+  }
   clear();
   server.send(200,"application/json", "Ok");
 }
@@ -320,359 +252,94 @@ void clear() {
 }
 
 void firstSetColors(int num, uint8_t r, uint8_t g, uint8_t b) {
-  int counter;
-  int startLed;
-  int end;
-  uint8_t endLed;
-  int direction;
-  int blockSize;
-  switch (num) {
-    case 1:
-      counter = counter1_1;
-      startLed = start1_1;
-      endLed = end1_1;
-      direction = direction1;
-      blockSize = blockSize1;
-      break;
-    case 2:
-      counter = counter1_2;
-      startLed = start1_2;
-      endLed = end1_2;      
-      direction = direction2;
-      blockSize = blockSize2;
-      break;
-    case 3:
-      counter = counter1_3;
-      startLed = start1_3;
-      endLed = end1_3;  
-      direction = direction3;
-      blockSize = blockSize3;
-
-      break;
-    case 4:
-      counter = counter1_4;
-      startLed = start1_4;
-      endLed = end1_4;  
-      direction = direction4;
-      blockSize = blockSize4;
-      break;
-    case 5:
-      counter = counter1_5;
-      startLed = start1_5;
-      endLed = end1_5;  
-      direction = direction5;
-      blockSize = blockSize5;
-      break;
-  }
-
-    if (direction == 0) {
-      Serial.print(counter);      
-      Serial.print(" ");
-      for (uint8_t i = startLed; i < blockSize + startLed - 1; i++) {
-        int8_t pos = counter - i;
-        if ( pos == 0) {
-          pos = endLed;
-        } else if ( pos < 0 ) {
-          pos = endLed - abs(pos);
-        }
-        // Serial.print("counter ");
-        // Serial.println(counter);
-        Serial.print(pos);
-        Serial.print(" ");
+  if (directions[num] == 0) {
+    RING.setPixelColor(start_led[num], r, g, b);
+    for (uint8_t i = start_led[num]; i < blockSizes[num] + start_led[num] - 1; i++) {
+      int8_t pos = counters[num] - i;
+      if ( pos == 0) {
+        pos = end_led[num];
+      } else if ( pos < 0 ) {
+        pos = end_led[num] - abs(pos);
       }
-      Serial.println("");
-    } else {
-      for (uint8_t pos = 0 + startLed; pos < blockSize + startLed; pos++) {
-        // Serial.print("counter ");
-        // Serial.println(counter);
-        Serial.print(pos);
-        Serial.print(" ");
-      }
-      Serial.println("");
+      RING.setPixelColor(pos, r, g, b);
     }
-
+  } else {
+    for (uint8_t pos = 0 + start_led[num]; pos < blockSizes[num] + start_led[num]; pos++) {
+      RING.setPixelColor(pos, r, g, b);
+    }
+  }
 }
 
 void nextSetColors(int num, uint8_t r, uint8_t g, uint8_t b) {
-  int counter;
-  int startLed;
-  int end;
-  uint8_t endLed;
-  int direction;
-  int blockSize;
-  switch (num) {
-    case 1:
-      counter = counter1_1;
-      startLed = start1_1;
-      endLed = end1_1;
-      direction = direction1;
-      blockSize = blockSize1;
-      break;
-    case 2:
-      counter = counter1_2;
-      startLed = start1_2;
-      endLed = end1_2;      
-      direction = direction2;
-      blockSize = blockSize2;
-      break;
-    case 3:
-      counter = counter1_3;
-      startLed = start1_3;
-      endLed = end1_3;  
-      direction = direction3;
-      blockSize = blockSize3;
-
-      break;
-    case 4:
-      counter = counter1_4;
-      startLed = start1_4;
-      endLed = end1_4;  
-      direction = direction4;
-      blockSize = blockSize4;
-      break;
-    case 5:
-      counter = counter1_5;
-      startLed = start1_5;
-      endLed = end1_5;  
-      direction = direction5;
-      blockSize = blockSize5;
-      break;
-  }
-    Serial.print(counter);
-    Serial.print(" ");
-    if (direction == 0) {
-
-      int8_t pos = counter - blockSize - startLed + 1;
-      if (pos == 0) {
-        pos = endLed;
-      } else if (pos < 0 ) {
-        pos = endLed - abs(pos);
-      } else {
-        pos = pos + startLed - 1;
-      }
-      Serial.print(blockSize);
-      Serial.print(" ");   
-      Serial.print(startLed);
-      Serial.print(" ");   
-      Serial.print(pos);
-      Serial.println("");
+  int8_t pos;
+  if (directions[num] == 0) {
+    pos = counters[num] - blockSizes[num] - start_led[num] + 1;
+    if (pos == 0) {
+      pos = end_led[num];
+    } else if (pos < 0 ) {
+      pos = end_led[num] - abs(pos);
     } else {
-      int8_t pos = counter - blockSize - 2;
-      // if (pos == startLed - 1) {
-      //   pos = endLed;
-      // } 
-      // else 
-      // if (pos < startLed ) {
-      //   pos = counter + blockSize;
-      // } 
-      Serial.print(blockSize);
-      Serial.print(" ");   
-      Serial.print(startLed);
-      Serial.print(" ");          
-      Serial.print(pos);
-      Serial.print(" ");           
+      pos = pos + start_led[num] - 1;
     }
-    Serial.println("");           
-
+  } else {
+    if (counters[num] <= end_led[num] - blockSizes[num]) {
+      pos = blockSizes[num] + counters[num];
+    } else {
+      pos = blockSizes[num] - num_leds[num] + counters[num];
+    }
+  }
+  RING.setPixelColor(counters[num], r, g, b);
+  RING.setPixelColor(pos, BLACK[0], BLACK[1], BLACK[2]);
 }
 
 void setColors(int num, uint8_t r, uint8_t g, uint8_t b){
-  Serial.print("Ring ");
-  Serial.print(num);
-  Serial.print("   ");
-  // wdt_reset();
-  // yield();
-  bool first;
-  switch (num) {
-    case 1:
-      first = firstStart1;
-      break;
-    case 2:
-      first = firstStart2;
-      break;
-    case 3:
-      first = firstStart3;
-      break;
-    case 4:
-      first = firstStart4;
-      break;
-    case 5:
-      first = firstStart5;
-      break;
-  }
-
-  if (first) {
+  if (firstStart[num]) {
     firstSetColors(num, r, g, b);
-    first = false;
+    firstStart[num] = false;
   } else {
     nextSetColors(num, r, g, b);
-  }
-
-  switch (num) {
-    case 1:
-      firstStart1 = first;
-      break;
-    case 2:
-      firstStart2 = first;
-      break;
-    case 3:
-      firstStart3 = first;
-      break;
-    case 4:
-      firstStart4 = first;
-      break;
-    case 5:
-      firstStart5 = first;
-      break;
   }
 }
 
 void setCounter(int num){
-  // wdt_reset();
-  // yield();
-  // ESP.wdtFeed();
-  int counter;
-  // int num_leds;
-  int direction;
-  int start;
-  int end;
-  switch (num) {
-    case 5:
-      counter = counter1_5;
-      // num_leds = num_leds1_5;
-      direction = direction5;
-      start = start1_5;
-      end = end1_5;      
-      break;
-    case 1:
-      counter = counter1_1;
-      // num_leds = num_leds1_1;
-      direction = direction1;
-      start = start1_1;
-      end = end1_1;      
-      break;
-    case 2:
-      counter = counter1_2;
-      // num_leds = num_leds1_2;
-      direction = direction2;
-      start = start1_2;
-      end = end1_2;      
-      break;
-    case 3:
-      counter = counter1_3;
-      // num_leds = num_leds1_3;
-      direction = direction3;
-      start = start1_3;
-      end = end1_3;      
-      break;
-    case 4:
-      counter = counter1_4;
-      // num_leds = num_leds1_4;
-      direction = direction4;
-      start = start1_4;
-      end = end1_4;      
-      break;
-  }
-  if (direction == 0) {
-    counter++;
-    if (counter > end) counter = start;
+  if (directions[num] == 0) {
+    counters[num]++;
+    if (counters[num] > end_led[num]) counters[num] = start_led[num];
    } else {
-    counter--;
-    if (counter < start) counter = end;
-  }
-  switch (num) {
-    case 5:
-      counter1_5 = counter;
-      break;
-    case 1:
-      counter1_1 = counter;
-      break;
-    case 2:
-      counter1_2 = counter;
-      break;
-    case 3:
-      counter1_3 = counter;
-      break;
-    case 4:
-      counter1_4 = counter;
-      break;
+    counters[num]--;
+    if (counters[num] < start_led[num]) counters[num] = end_led[num];
   }
 }
 
 void loop() {
   server.handleClient();
   delay(5);
-  // wdt_reset();
-  // yield();
   if (isStarted) {
-    if (enable1) {
-      if ((millis() - timer1_1) > period1_1) {
-        // setColors1(1, BLACK[0], BLACK[1], BLACK[2]);
-        setCounter(1);
-        setColors(1, color1[0], color1[1], color1[2]);
-        timer1_1 = millis();
+    for (uint8_t i = 1; i <= NUM_RINGS; i++)
+    if (enable[i]) {
+      if ((millis() - timers[i]) > period[i]) {
+        setCounter(i);
+        setColors(i, colors[i][0], colors[i][1], colors[i][2]);
+        timers[i] = millis();
       }
-      // ESP.wdtFeed();
-      // yield();
-    }
-    if (enable2) {
-      if ((millis() - timer1_2) > period1_2) {
-        // setColors1(2, BLACK[0], BLACK[1], BLACK[2]);
-        setCounter(2);
-        setColors(2, color2[0], color2[1], color2[2]);
-        timer1_2 = millis();
-      }
-      // ESP.wdtFeed();
-      // yield();
-    }
-    if (enable3) {
-      if ((millis() - timer1_3) > period1_3) {
-        // setColors1(3, BLACK[0], BLACK[1], BLACK[2]);
-        setCounter(3);
-        setColors(3, color3[0], color3[1], color3[2]);
-        timer1_3 = millis();
-      }
-      // ESP.wdtFeed();
-      // yield();
-    }
-    if (enable4) {
-      if ((millis() - timer1_4) > period1_4) {
-        // setColors1(4, BLACK[0], BLACK[1], BLACK[2]);
-        setCounter(4);
-        setColors(4, color4[0], color4[1], color4[2]);
-        timer1_4 = millis();
-      }
-      // ESP.wdtFeed();
-      // yield();
-    }
-    if (enable5) {
-      if ((millis() - timer1_5) > period1_5) {
-        // setColors1(5, BLACK[0], BLACK[1], BLACK[2]);
-        setCounter(5);
-        setColors(5, color5[0], color5[1], color5[2]);
-        timer1_5 = millis();
-      }
-      // ESP.wdtFeed();
-      // yield();
+      ESP.wdtFeed();
     }
  
-    // if (enable0) {
-    //   if ((millis() - timer1_0) > period1_0) {
+    if (enable[0]) {
+      if ((millis() - timers[0]) > period[0]) {
 
-    //     if (center1_0) {
-    //       RING.setPixelColor(0, color0[0], color0[1], color0[2]);
-    //     } 
-    //     else {
-    //       RING.setPixelColor(0, BLACK[0], BLACK[1], BLACK[2]);
-    //     }
-    //     center1_0 = !center1_0;
-    //     timer1_0 = millis();
-    //   }
-    //   ESP.wdtFeed();
-    //   yield();
-    //  }
+        if (center1_0) {
+          RING.setPixelColor(0, colors[0][0], colors[0][1], colors[0][2]);
+        } 
+        else {
+          RING.setPixelColor(0, BLACK[0], BLACK[1], BLACK[2]);
+        }
+        center1_0 = !center1_0;
+        timers[0] = millis();
+      }
+      ESP.wdtFeed();
+      yield();
+    }
     RING.show();
-  //   wdt_reset();
-  //   yield();
   }
 }
