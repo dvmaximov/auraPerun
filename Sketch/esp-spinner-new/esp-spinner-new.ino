@@ -189,6 +189,8 @@ void hw_wdt_enable(){
 void setup() {
   delay( 1000 );
   // ESP.wdtDisable();
+  ESP.wdtEnable(WDTO_1S);
+  hw_wdt_disable();
   RING.begin();
   RING.setBrightness(100);
   Serial.begin(115200);
@@ -210,24 +212,19 @@ void setup() {
 
 
 void start(){
-  firstStart[1] = true;
-  firstStart[2] = true;
-  firstStart[3] = true;
-  firstStart[4] = true;
-  firstStart[5] = true;
-
+  for (uint8_t i = 1; i <= NUM_RINGS; i++) {
+    firstStart[i] = true;
+  }
+  
   timers[0] = millis();
-  timers[1] = timers[0];
-  timers[2] = timers[0];
-  timers[3] = timers[0];
-  timers[4] = timers[0];
-  timers[5] = timers[0];
+  for (uint8_t i = 1; i <= NUM_RINGS; i++) {
+    timers[i] = timers[0];
+  }
 
-  counters[1] = directions[1] == 0? start_led[1] - 1 : start_led[1] + 1;
-  counters[2] = directions[2] == 0? start_led[2] - 1 : start_led[2] + 1;
-  counters[3] = directions[3] == 0? start_led[3] - 1 : start_led[3] + 1;
-  counters[4] = directions[4] == 0? start_led[4] - 1 : start_led[4] + 1;
-  counters[5] = directions[5] == 0? start_led[5] - 1 : start_led[5] + 1;
+  for (uint8_t i = 1; i <= NUM_RINGS; i++) {
+    counters[i] = directions[i] == 0? start_led[i] - 1 : start_led[i] + 1;
+  }
+
   center1_0 = true;
 
   clear();
@@ -314,6 +311,7 @@ void setCounter(int num){
 void loop() {
   server.handleClient();
   delay(5);
+  ESP.wdtFeed();
   if (isStarted) {
     for (uint8_t i = 1; i <= NUM_RINGS; i++)
     if (enable[i]) {
@@ -338,7 +336,6 @@ void loop() {
         timers[0] = millis();
       }
       ESP.wdtFeed();
-      yield();
     }
     RING.show();
   }
