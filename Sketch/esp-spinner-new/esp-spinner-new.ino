@@ -43,7 +43,7 @@ uint directions[] = {0, 0, 0, 0, 0, 0}; // [Центральное, Кольцо
 uint blockSizes[] = {1, 1, 1, 1, 1, 1}; // [Центральное, Кольцо 1, Кольцо 2, Кольцо 3, Кольцо 4, Кольцо 5]
 bool firstStart[] = {false, true, true, true, true, true}; // [Центральное, Кольцо 1, Кольцо 2, Кольцо 3, Кольцо 4, Кольцо 5]
 unsigned long timers[] = {0, 0, 0, 0, 0, 0}; // [Центральное, Кольцо 1, Кольцо 2, Кольцо 3, Кольцо 4, Кольцо 5]
-uint counters[] = {0, 0, 0, 0, 0, 0}; // [Центральное, Кольцо 1, Кольцо 2, Кольцо 3, Кольцо 4, Кольцо 5]
+int8_t counters[] = {0, 0, 0, 0, 0, 0}; // [Центральное, Кольцо 1, Кольцо 2, Кольцо 3, Кольцо 4, Кольцо 5]
 
 bool center1_0 = true;
 
@@ -190,7 +190,7 @@ void setup() {
   delay( 1000 );
   // ESP.wdtDisable();
   ESP.wdtEnable(WDTO_1S);
-  hw_wdt_disable();
+  // hw_wdt_disable();
   RING.begin();
   RING.setBrightness(100);
   Serial.begin(115200);
@@ -310,7 +310,7 @@ void setCounter(int num){
 
 void loop() {
   server.handleClient();
-  delay(5);
+  delay(1);
   ESP.wdtFeed();
   if (isStarted) {
     for (uint8_t i = 1; i <= NUM_RINGS; i++)
@@ -320,6 +320,7 @@ void loop() {
         setColors(i, colors[i][0], colors[i][1], colors[i][2]);
         timers[i] = millis();
       }
+      delay(1);
       ESP.wdtFeed();
     }
  
@@ -338,5 +339,6 @@ void loop() {
       ESP.wdtFeed();
     }
     RING.show();
-  }
+    delay(1);
+}
 }
