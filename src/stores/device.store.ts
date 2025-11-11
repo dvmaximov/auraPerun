@@ -152,7 +152,17 @@ export const useDeviceStore = defineStore('device', {
           if (!isDeviseStarted && this.devices[index].isActive) {
             eventBus.sendData({
               type: EventType.EVENT_DEVICE_FOUND,
-              data: {},
+              data: {
+                id: this.devices[index].id,
+              },
+            });
+          }
+          if (!this.devices[index].isActive) {
+            eventBus.sendData({
+              type: EventType.EVENT_DEVICE_LOSS,
+              data: {
+                id: this.devices[index].id,
+              },
             });
           }
         }

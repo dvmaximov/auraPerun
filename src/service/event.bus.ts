@@ -6,6 +6,7 @@ export enum EventType {
   EVENT_MESSAGE_ERROR,
   EVENT_MESSAGE_SUCCESS,
   EVENT_DEVICE_FOUND,
+  EVENT_DEVICE_LOSS,
 }
 
 export interface EventData {

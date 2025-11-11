@@ -337,8 +337,9 @@ void loop() {
         timers[0] = millis();
       }
       ESP.wdtFeed();
+      delay(1);
     }
     RING.show();
     delay(1);
-}
+  }
 }

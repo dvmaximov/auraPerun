@@ -160,6 +160,10 @@ const bus = eventBus.getData().subscribe(async (event: EventData) => {
   if (event.type == EventType.EVENT_DEVICE_FOUND && isStarted.value) {
     await restart();
   }
+  if (event.type == EventType.EVENT_DEVICE_LOSS && isStarted.value) {
+    await restart();
+    console.log('Device loss ', event.data!['id']);
+  }
 });
 
 sessionStore.setIsStarted(false);
